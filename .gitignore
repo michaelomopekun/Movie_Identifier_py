@@ -34,8 +34,15 @@ wheels/
 Thumbs.db
 
 process_log.txt
+processed_frame_log.txt
+session_input_log.txt
+processing_vedio_frame_log.txt
 movie_trailers.csv
+chromaDBview.py
+visual.onnx
+chromaDB/
 csv_files/
+env_clip/
 trailers/
 *.csv
 *.log
