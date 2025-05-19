@@ -88,7 +88,7 @@ for index, row in subset.iterrows():
     # Skip if year is empty and log to file
     if year == "\\N" or not str(year).isdigit():
 
-        with open("process_log.txt", "a") as log_file:
+        with open("logs/process_log.txt", "a") as log_file:
             log_file.write(f"{tconst}, {title}, {year}, Skipped (invalid year)\n")
         continue
 
@@ -99,7 +99,7 @@ for index, row in subset.iterrows():
 
         print(f"[{index + 1}/{len(movies)}] {title} ({year}): Movie not found")
 
-        with open("process_log.txt", "a") as log_file:
+        with open("logs/process_log.txt", "a") as log_file:
             log_file.write(f"[{index + 1}/{len(movies)}] {tconst}, {title}, {year}, Movie not found\n")
         continue
 
@@ -110,13 +110,13 @@ for index, row in subset.iterrows():
 
         print(f"[{index + 1}/{len(movies)}] {title} ({year}): Trailer not found")
 
-        with open("process_log.txt", "a") as log_file:
+        with open("logs/process_log.txt", "a") as log_file:
             log_file.write(f"[{index + 1}/{len(movies)}] {tconst}, {title}, {year}, Trailer not found\n")
         continue
 
     print(f"[{index + 1}/{len(movies)}] {title} ({year}): {trailer_url}")
     
-    with open("process_log.txt", "a") as log_file:
+    with open("logs/process_log.txt", "a") as log_file:
         log_file.write(f"[{index + 1}/{len(movies)}] {tconst}, {title}, {year}, {trailer_url}\n")
 
     # Append found trailer to the results list

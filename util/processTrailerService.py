@@ -18,7 +18,7 @@ session = ort.InferenceSession("visual.onnx", providers = providers)
 clipProcessor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch16")
 print("Active ONNX Providers:", session.get_providers())
 
-with open("session_input_log.txt", "a", encoding="utf-8") as log_file:
+with open("logs/session_input_log.txt", "a", encoding="utf-8") as log_file:
     log_file.write(f"Input name: {session.get_inputs()[0].name} :: at logtime:: {datetime.now()}\n")
 
 
@@ -54,12 +54,12 @@ def extractFrames(videoPath, numFrames=int(os.getenv("NUMBER_OF_FRAMES", 50))):
 
             frames.append(Image.fromarray(frame))
 
-            with open("processed_frame_log.txt", "a", encoding="utf-8") as log_file:
+            with open("logs/processed_frame_log.txt", "a", encoding="utf-8") as log_file:
                 log_file.write(f"✅successfully read frame {frameId} from {videoPath}\n")
 
             print(f"✅successfully read frame {frameId} from {videoPath}")
         else:
-            with open("processed_frame_log.txt", "a", encoding="utf-8") as log_file:
+            with open("logs/processed_frame_log.txt", "a", encoding="utf-8") as log_file:
                 log_file.write(f"❌Failed to read frame {frameId} from {videoPath}\n")
 
             print(f"❌Failed to read frame {frameId} from {videoPath}")
@@ -88,7 +88,7 @@ def processTrailer(tconst, path):
     frames = extractFrames(path)
 
     if not frames:
-        with open("processing_vedio_frame_log.txt", "a", encoding="utf-8") as log_file:
+        with open("logs/processing_vedio_frame_log.txt", "a", encoding="utf-8") as log_file:
             log_file.write(f"❌Failed to extract frame for {tconst} from path: {path}\n")
         return
     
@@ -102,7 +102,7 @@ def processTrailer(tconst, path):
                     metadatas = [{"filename": path}]
                     )
     
-    with open("processing_vedio_frame_log.txt", "a", encoding="utf-8") as log_file:
+    with open("logs/processing_vedio_frame_log.txt", "a", encoding="utf-8") as log_file:
         log_file.write(f"✅stored embedding for {tconst} from path: {path}\n")
 
 

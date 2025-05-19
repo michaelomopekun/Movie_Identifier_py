@@ -39,11 +39,14 @@ session_input_log.txt
 processing_vedio_frame_log.txt
 movie_trailers.csv
 chromaDBview.py
+tt4154796.mp4
 visual.onnx
-chromaDB/
+test_samples/
 csv_files/
+chromaDB/
 env_clip/
 trailers/
+logs/
 *.csv
 *.log
 
