@@ -107,23 +107,36 @@ class TrailerSearchService:
 
     def search(self, video_path: str, top_k: int = 5):
 
-        vector = self.embed_video_scene(video_path)
+        try:
 
-        results = self.collection.query(query_embeddings=[vector.tolist()], n_results=top_k)
+            vector = self.embed_video_scene(video_path)
 
-        formatted_results = [
-            SearchResult(
-                id=id_,
-                document=document,
-                metadata=metadata,
-                distance=distance
-            )
-            for id_, document, metadata, distance in zip(
-                results["ids"],
-                results["documents"],
-                results["metadatas"],
-                results["distances"]
-            )
-        ]
+            results = self.collection.query(query_embeddings=[vector.tolist()], n_results=top_k)
 
-        return formatted_results
+            formatted_results = []
+            for i in range(len(results["ids"][0])):
+
+                result = SearchResult(
+                    id=results["ids"][0][i],
+                    document=results["documents"][0][i],
+                    metadata=results["metadatas"][0][i],
+                    distance=float(results["distances"][0][i])
+                )
+                formatted_results.append(result)
+                
+                # Log results
+                with open(path_result_log, "a", encoding="utf-8") as log_file:
+
+                    log_file.write(f"ID: {result.id}\n")
+                    log_file.write(f"Document: {result.document}\n")
+                    log_file.write(f"Metadata: {result.metadata}\n")
+                    log_file.write(f"Distance: {result.distance}\n")
+                    log_file.write("-" * 50 + "\n")
+
+            return formatted_results
+        
+        except Exception as e:
+
+            with open(path_result_log, "a", encoding="utf-8") as log_file:
+                log_file.write(f"❌Error: {str(e)}\n")
+            raise e

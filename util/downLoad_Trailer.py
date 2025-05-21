@@ -61,6 +61,7 @@ class DownloadMovieTrailers:
         # Process specified range
         subset = self.movies.iloc[0:]
 
+        summary = {}
         results = []
 
         for index, row in subset.iterrows():
@@ -73,23 +74,45 @@ class DownloadMovieTrailers:
 
             try:
                 path = self.download_trailer_yt(tconst, url)
-                results.append({f'[{index + 1}/{len(self.movies)}]': {'tconst': tconst, 'file_path': path}})
+
+                results.append({
+                    'index': f'[{index + 1}/{len(self.movies)}]',
+                    'tconst': tconst,
+                    'file_path': path,
+                    'status': 'success'
+                })
 
                 time.sleep(0.5)
 
             except Exception as e:
-                results.append({f'[{index + 1}/{len(self.movies)}]': {'tconst': tconst, 'error': f"Error downloading {tconst}: {e}"}})
+                results.append({
+                    'index': f'[{index + 1}/{len(self.movies)}]',
+                    'tconst': tconst,
+                    'file_path': '',
+                    'status': f'error: {str(e)}'
+                })
 
-        results.append(f"{'='*25} {datetime.datetime.now().strftime('%Y-%m-%d %H:%M')} {'='*25}")
-        results.append(f"Downloaded {len(results)} trailers successfully.")
-        results.append(f"Total trailers processed: {len(subset)}")
-        results.append(f"Total trailers downloaded: {len(results)}")
-        results.append(f"Total trailers failed: {len(subset) - len(results)}")
-        results.append(f"{'='*25} {datetime.datetime.now().strftime('%Y-%m-%d %H:%M')} {'='*25}")
+        successful_downloads = len([r for r in results if r['status'] == 'success'])
+        summary_stats = {
+            'timestamp': datetime.datetime.now().strftime('%Y-%m-%d %H:%M'),
+            'total_processed': len(subset),
+            'total_downloaded': successful_downloads,
+            'total_failed': len(subset) - successful_downloads
+        }
 
+        results_df = pd.DataFrame(results)
+        summary_df  = pd.DataFrame([summary_stats])
 
         # save download summary
-        pd.DataFrame(results).to_csv(
-                                    self.downloaded_trailers_summary,
-                                    mode='a', 
-                                    header=True, index=True)
+        results_df.to_csv(
+            self.downloaded_trailers_summary,
+            mode='a',
+            header=True, index=True
+        )
+
+        # save summary stats
+        summary_df.to_csv(
+            self.downloaded_trailers_summary,
+            mode='a',
+            header=True, index=True
+        )

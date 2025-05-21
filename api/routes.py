@@ -29,19 +29,10 @@ async def search_scene(file: UploadFile = File(...), top_k: int = 3):
         with open(temp_file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
 
-        results = search_service.search(temp_file_path, top_k=top_k)
+        raw_results = search_service.search(temp_file_path, top_k=top_k)
 
-        for match in results:
+        return raw_results
 
-            with open(path_result_log, "a", encoding="utf-8") as log_file:
-                log_file.write(f"ID: {match['id']}\n")
-                log_file.write(f"Document: {match['document']}\n")
-                log_file.write(f"Metadata: {match['metadata']}\n")
-                log_file.write(f"Distance: {match['distance']}\n")
-                log_file.write("-" * 50 + "\n")
-
-        return results
-    
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     

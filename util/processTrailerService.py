@@ -37,14 +37,14 @@ class ProcessTrailers:
         # initialize onnx
         providers = ['DmlExecutionProvider']
 
-        session = ort.InferenceSession(self.path_visual_onnx, providers = providers)
+        self.session = ort.InferenceSession(self.path_visual_onnx, providers = providers)
 
         self.clipProcessor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch16")
 
-        print("Active ONNX Providers:", session.get_providers())
+        print("Active ONNX Providers:", self.session.get_providers())
 
         with open(self.path_processed_frame_log, "a", encoding="utf-8") as log_file:
-            log_file.write(f"Input name: {session.get_inputs()[0].name} :: at logtime:: {datetime.now()}\n")
+            log_file.write(f"Input name: {self.session.get_inputs()[0].name} :: at logtime:: {datetime.now()}\n")
 
 
         # initialize chromadb
@@ -135,12 +135,12 @@ class ProcessTrailers:
 
 
 
-    def processTrailer(self, tconst, path):
+    def processTrailer(self):
 
         # loop through each trailer to extract embedding
         trailerDirectory = os.path.join(self.parent_dir, "trailers")
 
-        aboutToProcessTrailers = [f for f in os.listdir(trailerDirectory) if f.endswith(".mp4")][:100]
+        aboutToProcessTrailers = [f for f in os.listdir(trailerDirectory) if f.endswith(".mp4")][0:]
 
         for file in tqdm(aboutToProcessTrailers):
 
