@@ -1,17 +1,31 @@
+import os
 import cv2
 import numpy as np
 from PIL import Image
+from pathlib import Path
+import onnxruntime as ort
+from models.response_model import SearchResult
+from dotenv import load_dotenv
 from chromadb import PersistentClient
 from transformers import CLIPProcessor
-import onnxruntime as ort
-import os
-from dotenv import load_dotenv
 
 load_dotenv()
 
+parent_dir = Path(__file__).resolve().parent.parent
+
+path_result_log = parent_dir / "logs" / "search_result_log.txt"
+if not path_result_log.exists():
+    path_result_log.touch()
+
+path = parent_dir / "logs" / "processed_client_frame_log.txt"
+
+path_onnx = parent_dir / "onnx" / "visual.onnx"
+
+path_chromadb = parent_dir / "chromaDB"
+
 class TrailerSearchService:
 
-    def __init__(self, db_path="./chromaDB", model_path="visual.onnx", num_frames = None):
+    def __init__(self, db_path=str(path_chromadb), model_path=str(path_onnx), num_frames = None):
 
         self.num_frames = int(num_frames or os.getenv("NUMBER_OF_FRAMES", 100))
 
@@ -54,12 +68,12 @@ class TrailerSearchService:
 
                 frames.append(Image.fromarray(frame))
 
-                with open("logs/processed_client_frame_log.txt", "a", encoding="utf-8") as log_file:
+                with open(path, "a", encoding="utf-8") as log_file:
                     log_file.write(f"✅successfully read frame {frameId} from {videoPath}\n")
 
                 print(f"✅successfully read frame {frameId} from {videoPath}")
             else:
-                with open("logs/processed_client_frame_log.txt", "a", encoding="utf-8") as log_file:
+                with open(path, "a", encoding="utf-8") as log_file:
                     log_file.write(f"❌Failed to read frame {frameId} from {videoPath}\n")
 
                 print(f"❌Failed to read frame {frameId} from {videoPath}")
@@ -97,12 +111,19 @@ class TrailerSearchService:
 
         results = self.collection.query(query_embeddings=[vector.tolist()], n_results=top_k)
 
-        return [
-            {
-                "id": results["ids"][i],
-                "document": results["documents"][i],
-                "metadata": results["metadatas"][i],
-                "distance": results["distances"][i]
-            }
-            for i in range(len(results["ids"]))
+        formatted_results = [
+            SearchResult(
+                id=id_,
+                document=document,
+                metadata=metadata,
+                distance=distance
+            )
+            for id_, document, metadata, distance in zip(
+                results["ids"],
+                results["documents"],
+                results["metadatas"],
+                results["distances"]
+            )
         ]
+
+        return formatted_results
