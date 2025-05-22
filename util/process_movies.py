@@ -167,7 +167,7 @@ class ProcessMovies:
             })
 
             # Sleep to avoid throttling
-            time.sleep(0.25)
+            time.sleep(0.5)
 
 
         # Save to CSV
@@ -187,8 +187,8 @@ class ProcessMovies:
 
             self.process_movies(remain_to_100, header=False)
 
-        self.update_env_variable("TRAILER_CSV_PATH", self.Path_trailer_csv)
-        self.update_env_variable("BATCH", self.batch)
+
+
 
 
 
@@ -205,15 +205,6 @@ class ProcessMovies:
             for line in file:
                 if line.startswith(f"{key}="):
                     lines.append(f"{key}={value}\n")
-                    found = True
-
-                elif key == "TRAILER_CSV_PATH":
-                    lines.append(f"{key}=movie_trailers_{self.batch}.csv\n")
-                    found = True
-
-                elif key == "BATCH":
-                    batch = self.batch + 1
-                    lines.append(f"{key}={batch}\n")
                     found = True
 
                 else:

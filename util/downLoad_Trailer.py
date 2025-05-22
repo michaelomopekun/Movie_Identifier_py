@@ -3,7 +3,9 @@ import time
 import pandas as pd
 import datetime
 from pathlib import Path
+import process_movies
 from yt_dlp import YoutubeDL
+from dotenv import load_dotenv
 
 
 
@@ -12,10 +14,18 @@ parent_dir = Path(__file__).resolve().parent.parent
 class DownloadMovieTrailers:
 
     def __init__(self, parent_dir=parent_dir):
+
+        load_dotenv()
         
         self.parent_dir = parent_dir
 
+        self.initialize_process_movies = process_movies.ProcessMovies()
+
+        self.batch = int(os.getenv("BATCH"))
+
         self.path_csv_trailer = os.getenv("TRAILER_CSV_PATH")
+
+        self.END_INDEX = int(os.getenv("END_INDEX"))
 
         # Load CSV containing the movie trailers
         self.movies = pd.read_csv(parent_dir / "csv_files" / self.path_csv_trailer)
@@ -23,16 +33,17 @@ class DownloadMovieTrailers:
         self.downloaded_trailers_summary = parent_dir / "csv_files" / "downloaded_trailers_summary.csv"
 
         # Create folder for trailers if not exists
-        os.makedirs("trailers", exist_ok=True)
-
+        self.trailers_dir = parent_dir / "trailers"
+        self.trailers_dir.mkdir(exist_ok=True)
 
         # yt-dlp options for 360p resolution
         self.ydl_opts = {
             'format': 'bestvideo[height<=360]',
-            'outtmpl': 'trailers/%(id)s.%(ext)s',
+            'outtmpl': str(self.trailers_dir / '%(id)s.%(ext)s'),
             'quiet': True,
             'no_warnings': True,
             'ffmpeg_location': r'C:\ffmpeg\ffmpeg-7-1-1',
+            
         }
 
 
@@ -40,19 +51,30 @@ class DownloadMovieTrailers:
     # download trailer using yt-dlp
     def download_trailer_yt(self, tconst, trailer_url):
 
-        filename = f"trailers/{tconst}.mp4"
+        try:
 
-        if os.path.exists(filename):
-            return filename
+            filename = self.trailers_dir / f"{tconst}.mp4"
 
-        with YoutubeDL(self.ydl_opts) as ydl:
-            info = ydl.extract_info(trailer_url, download=True)
+            if filename.exists():
+                return str(filename)
 
-            downloaded = ydl.prepare_filename(info)
+            with YoutubeDL(self.ydl_opts) as ydl:
+                info = ydl.extract_info(trailer_url, download=True)
+                downloaded = Path(ydl.prepare_filename(info))
 
-            if downloaded != filename:
-                os.rename(downloaded, filename)
-        return filename
+                if downloaded != filename:
+                    if downloaded.exists():
+                        downloaded.rename(filename)
+                    else:
+                        raise FileNotFoundError(f"Downloaded file not found: {downloaded}")
+                    
+            if not filename.exists():
+                raise FileNotFoundError(f"Failed to download trailer to {filename}")
+                    
+            return str(filename)
+        
+        except Exception as e:
+            raise Exception(f"Error downloading trailer for {tconst}: {str(e)}")
 
 
 
@@ -61,7 +83,7 @@ class DownloadMovieTrailers:
         # Process specified range
         subset = self.movies.iloc[0:]
 
-        summary = {}
+        summary_stats = {}
         results = []
 
         for index, row in subset.iterrows():
@@ -116,3 +138,16 @@ class DownloadMovieTrailers:
             mode='a',
             header=True, index=True
         )
+
+        new_batch = self.batch + 1
+        new_csv = f"movie_trailers_{new_batch}.csv"
+
+        new_target = self.END_INDEX + 100
+
+        self.initialize_process_movies.update_env_variable("START_INDEX", self.END_INDEX)
+
+        self.initialize_process_movies.update_env_variable("END_INDEX", new_target)
+        
+        self.initialize_process_movies.update_env_variable("TRAILER_CSV_PATH", new_csv)
+        
+        self.initialize_process_movies.update_env_variable("BATCH", new_batch)

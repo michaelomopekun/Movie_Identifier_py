@@ -27,7 +27,7 @@ if __name__ == "__main__":
 
     process_movies_instance = safe_init(process_movies.ProcessMovies, "ProcessMovies")
 
-    safe_run(lambda: process_movies_instance.process_movies(target_num_of_trailers=100), "process_movies")
+    safe_run(process_movies_instance.process_movies, "process_movies")
     
     download_trailer_instance = safe_init(downLoad_Trailer.DownloadMovieTrailers, "DownloadMovieTrailers")
     
