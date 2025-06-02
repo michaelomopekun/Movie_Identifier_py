@@ -5,24 +5,29 @@ import numpy as np
 from PIL import Image
 from pathlib import Path
 import onnxruntime as ort
-from models.response_model import SearchResult
 from dotenv import load_dotenv
 from chromadb import PersistentClient
 from transformers import CLIPProcessor
+from models.response_model import SearchResult
 
 load_dotenv()
 
 onnxUrl = os.getenv("ONNX_MODEL_URL")
+token = os.getenv("Hugging_Face_Authorization_Token")
 
 parent_dir = Path(__file__).resolve().parent
 
 path_onnx = parent_dir / "onnx" / "visual.onnx"
 
 if not path_onnx.exists():
-    response = requests.get(onnxUrl)
+    response = requests.get(onnxUrl, headers={
+        "User-Agent": "Mozilla/5.0",
+        # "Authorization": token
+    })
     path_onnx.parent.mkdir(parents=True, exist_ok=True)
-
     print("DownLoading visual.onnx model...")
+
+    response.raise_for_status()
     with open(path_onnx, "wb") as f:
         f.write(response.content)
 
