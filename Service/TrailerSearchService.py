@@ -14,14 +14,16 @@ load_dotenv()
 
 onnxUrl = os.getenv("ONNX_MODEL_URL")
 
-parent_dir = Path(__file__).resolve().parent.parent.mkdir(parents=True, exist_ok=True)
+parent_dir = Path(__file__).resolve().parent
 
 path_onnx = parent_dir / "onnx" / "visual.onnx"
 
 if not path_onnx.exists():
+    response = requests.get(onnxUrl)
+    path_onnx.parent.mkdir(parents=True, exist_ok=True)
+
     print("DownLoading visual.onnx model...")
     with open(path_onnx, "wb") as f:
-        response = requests.get(onnxUrl)
         f.write(response.content)
 
 path_chromadb = parent_dir / "chromaDB"
