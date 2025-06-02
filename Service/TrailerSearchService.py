@@ -1,5 +1,6 @@
 import os
 import cv2
+import requests
 import numpy as np
 from PIL import Image
 from pathlib import Path
@@ -11,15 +12,17 @@ from transformers import CLIPProcessor
 
 load_dotenv()
 
-parent_dir = Path(__file__).resolve().parent.parent
+onnxUrl = os.getenv("ONNX_MODEL_URL")
 
-path_result_log = parent_dir / "logs" / "search_result_log.txt"
-if not path_result_log.exists():
-    path_result_log.touch()
-
-path = parent_dir / "logs" / "processed_client_frame_log.txt"
+parent_dir = Path(__file__).resolve().parent.parent.mkdir(parents=True, exist_ok=True)
 
 path_onnx = parent_dir / "onnx" / "visual.onnx"
+
+if not path_onnx.exists():
+    print("DownLoading visual.onnx model...")
+    with open(path_onnx, "wb") as f:
+        response = requests.get(onnxUrl)
+        f.write(response.content)
 
 path_chromadb = parent_dir / "chromaDB"
 
@@ -32,7 +35,7 @@ class TrailerSearchService:
         # Initialize onnx
         providers = ['DmlExecutionProvider']
 
-        self.session = ort.InferenceSession(model_path, providers=providers)
+        self.session = ort.InferenceSession(str(path_onnx))
 
         # Initialize clip
         self.processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch16")
@@ -40,7 +43,7 @@ class TrailerSearchService:
         # Initialize ChromaDB
         self.client = PersistentClient(path=db_path)
 
-        self.collection = self.client.get_collection(name="moviesTrailerEmbeddings")
+        self.collection = self.client.get_or_create_collection(name="moviesTrailerEmbeddings")
 
 
     def extract_frames(self, videoPath):
@@ -68,13 +71,13 @@ class TrailerSearchService:
 
                 frames.append(Image.fromarray(frame))
 
-                with open(path, "a", encoding="utf-8") as log_file:
-                    log_file.write(f"✅successfully read frame {frameId} from {videoPath}\n")
+                # with open(path, "a", encoding="utf-8") as log_file:
+                #     log_file.write(f"✅successfully read frame {frameId} from {videoPath}\n")
 
                 print(f"✅successfully read frame {frameId} from {videoPath}")
             else:
-                with open(path, "a", encoding="utf-8") as log_file:
-                    log_file.write(f"❌Failed to read frame {frameId} from {videoPath}\n")
+                # with open(path, "a", encoding="utf-8") as log_file:
+                #     log_file.write(f"❌Failed to read frame {frameId} from {videoPath}\n")
 
                 print(f"❌Failed to read frame {frameId} from {videoPath}")
                 continue
@@ -125,18 +128,18 @@ class TrailerSearchService:
                 formatted_results.append(result)
                 
                 # Log results
-                with open(path_result_log, "a", encoding="utf-8") as log_file:
+                # with open(path_result_log, "a", encoding="utf-8") as log_file:
 
-                    log_file.write(f"ID: {result.id}\n")
-                    log_file.write(f"Document: {result.document}\n")
-                    log_file.write(f"Metadata: {result.metadata}\n")
-                    log_file.write(f"Distance: {result.distance}\n")
-                    log_file.write("-" * 50 + "\n")
+                #     log_file.write(f"ID: {result.id}\n")
+                #     log_file.write(f"Document: {result.document}\n")
+                #     log_file.write(f"Metadata: {result.metadata}\n")
+                #     log_file.write(f"Distance: {result.distance}\n")
+                #     log_file.write("-" * 50 + "\n")
 
             return formatted_results
         
         except Exception as e:
 
-            with open(path_result_log, "a", encoding="utf-8") as log_file:
-                log_file.write(f"❌Error: {str(e)}\n")
+            # with open(path_result_log, "a", encoding="utf-8") as log_file:
+            #     log_file.write(f"❌Error: {str(e)}\n")
             raise e
