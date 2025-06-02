@@ -1,6 +1,6 @@
 import os
 import time
-import pandas as pd
+import pandas as pd # type: ignore
 import datetime
 from pathlib import Path
 import process_movies
@@ -28,7 +28,10 @@ class DownloadMovieTrailers:
         self.END_INDEX = int(os.getenv("END_INDEX"))
 
         # Load CSV containing the movie trailers
-        self.movies = pd.read_csv(parent_dir / "csv_files" / self.path_csv_trailer)
+        self.movies = pd.read_csv(parent_dir / "csv_files" / self.path_csv_trailer,
+                                  encoding='utf-8',
+                                  index_col=0,
+                                  on_bad_lines='skip')
 
         self.downloaded_trailers_summary = parent_dir / "csv_files" / "downloaded_trailers_summary.csv"
 

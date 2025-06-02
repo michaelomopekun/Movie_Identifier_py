@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "movie-identifier-py"
+version = "0.1.0"
+description = "A FastAPI service for identifying movies"
+authors = ["Michael Omopekun <your.email@example.com>"]
+readme = "README.md"
+packages = [{ include = "MOVIE_IDENTIFIER_PY" }]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+fastapi = "^0.110.0"
+uvicorn = "^0.29.0"
+
+[tool.poetry.scripts]
+start = "uvicorn main:app --host 0.0.0.0 --port 5000"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

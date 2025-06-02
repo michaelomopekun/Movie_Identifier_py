@@ -1,4 +1,4 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi import APIRouter, UploadFile, File, HTTPException, Form
 from Service.TrailerSearchService import TrailerSearchService
 from models.response_model import SearchResult
 from pathlib import Path
@@ -16,7 +16,7 @@ if not path_result_log.exists():
 
 
 @router.post("/search", response_model=list[SearchResult])
-async def search_scene(file: UploadFile = File(...), top_k: int = 3):
+async def search_scene(file: UploadFile = File(...), top_k: int = Form(3)):
 
     try:
 
