@@ -22,7 +22,7 @@ def view_embeddings():
         print(f"ID: {results['ids'][i]}")
         print(f"Document: {results['documents'][i]}")
         print(f"Metadata: {results['metadatas'][i]}")
-        print(f"Embedding Vector (first 10 dims): {results['embeddings'][i][:10]}")
+        print(f"Embedding Vector (first 10 dims): {results['embeddings'][0].shape}")
         print("-" * 50)
     
     print(f"Total number of embeddings: {len(results['ids'])}")
