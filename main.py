@@ -3,7 +3,6 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from Service.TrailerSearchService import TrailerSearchService
 
-
 app = FastAPI(
     title="Movie Identifier API",
     description="An API for identifying movies using movie scenes.",
@@ -26,6 +25,10 @@ app.add_middleware(
 )
 
 app.include_router(router, prefix="/api/v1")
+
+app.get("/")
+async def root():
+    return {"message": "Welcome to the Movie Identifier python service. server is up and running."}
 
 @app.get("/health")
 async def health_check():
