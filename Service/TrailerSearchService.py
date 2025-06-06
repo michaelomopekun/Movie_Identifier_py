@@ -24,7 +24,7 @@ class TrailerSearchService:
         # Initialize ChromaDB
         self.client = PersistentClient(path=db_path)
 
-        self.collection = self.client.get_collection(name="moviesTrailerEmbeddings")
+        self.collection = self.client.get_or_create_collection(name="moviesTrailerEmbeddings")
 
 
 
