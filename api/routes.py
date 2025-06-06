@@ -10,11 +10,6 @@ search_service = TrailerSearchService()
 
 parent_dir = Path(__file__).resolve().parent.parent
 
-path_result_log = parent_dir / "logs" / "search_result_log.txt"
-if not path_result_log.exists():
-    path_result_log.touch()
-
-
 @router.post("/search", response_model=list[SearchResult])
 async def search_scene(file: UploadFile = File(...), top_k: int = Form(3)):
 
