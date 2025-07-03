@@ -49,5 +49,6 @@ trailers/
 logs/
 *.csv
 *.log
+*.zip
 
 .ipynb_checkpoints

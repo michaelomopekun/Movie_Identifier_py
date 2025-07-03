@@ -1,11 +1,12 @@
 import logging
-import process_movies
-import downLoad_Trailer
-import processTrailerService
+from processTrailerService import ProcessTrailers
+from process_movies import ProcessMovies
+from downLoad_Trailer import DownloadMovieTrailers
 
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
 
 
 def safe_init(cls, name):
@@ -25,15 +26,15 @@ def safe_run(func, name):
 
 if __name__ == "__main__":
 
-    process_movies_instance = safe_init(process_movies.ProcessMovies, "ProcessMovies")
+    process_movies_instance = safe_init(ProcessMovies, "ProcessMovies")
 
     safe_run(process_movies_instance.process_movies, "process_movies")
-    
-    download_trailer_instance = safe_init(downLoad_Trailer.DownloadMovieTrailers, "DownloadMovieTrailers")
-    
+
+    download_trailer_instance = safe_init(DownloadMovieTrailers, "DownloadMovieTrailers")
+
     safe_run(download_trailer_instance.download_trailer, "download_trailer")
     
-    process_trailer_service_instance = safe_init(processTrailerService.ProcessTrailers, "ProcessTrailers")
+    process_trailer_service_instance = safe_init(ProcessTrailers, "ProcessTrailers")
 
     safe_run(process_trailer_service_instance.processTrailer, "processTrailer")
     

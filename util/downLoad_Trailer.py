@@ -1,11 +1,13 @@
 import os
 import time
-import pandas as pd # type: ignore
+import socket
+import winsound
 import datetime
+import pandas as pd
 from pathlib import Path
-import process_movies
 from yt_dlp import YoutubeDL
 from dotenv import load_dotenv
+from env_manager import envManager
 
 
 
@@ -19,7 +21,7 @@ class DownloadMovieTrailers:
         
         self.parent_dir = parent_dir
 
-        self.initialize_process_movies = process_movies.ProcessMovies()
+        # self.initialize_process_movies = process_movies.ProcessMovies()
 
         self.batch = int(os.getenv("BATCH"))
 
@@ -27,8 +29,14 @@ class DownloadMovieTrailers:
 
         self.END_INDEX = int(os.getenv("END_INDEX"))
 
+        csv_path = parent_dir / "csv_files" / self.path_csv_trailer
+
+        if not csv_path.exists():
+            with open(csv_path, 'w', encoding="utf-8") as f:
+                f.write("tconst,title,year,trailer_url\n")
+
         # Load CSV containing the movie trailers
-        self.movies = pd.read_csv(parent_dir / "csv_files" / self.path_csv_trailer,
+        self.movies = pd.read_csv(csv_path,
                                   encoding='utf-8',
                                   index_col=0,
                                   on_bad_lines='skip')
@@ -46,9 +54,29 @@ class DownloadMovieTrailers:
             'quiet': True,
             'no_warnings': True,
             'ffmpeg_location': r'C:\ffmpeg\ffmpeg-7-1-1',
-            
         }
 
+
+    def is_connected(self, host="8.8.8.8", port=53, timeout=3):
+        try:
+            socket.setdefaulttimeout(timeout)
+            socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect((host, port))
+            return True
+        
+        except Exception as e:
+            print(f"Socket error: {e}")
+            return False
+        
+
+    def retry_on_no_internet_access(self, message = None, attempt = None):
+        retry_count = 0
+        while not self.is_connected():
+            retry_count += 1
+            attempt = f" will retry in 10s (attempts --{retry_count}--)========" if attempt is None else attempt
+            print(message, attempt)
+            winsound.Beep(1000, 500)
+            time.sleep(10)
+        return True
 
 
     # download trailer using yt-dlp
@@ -98,7 +126,21 @@ class DownloadMovieTrailers:
                 continue
 
             try:
+
+                print("⌚⌚⌚checking internet connection...")
+
+                message = f"========❌❌❌No internet connection available at the moment while fetching trailer for TMDb ID {tconst},"
+                self.retry_on_no_internet_access(message)
+
+                print("✅Internet connection available, proceeding with download...")
+
                 path = self.download_trailer_yt(tconst, url)
+
+                if not path:
+                    print(f"❌❌❌Failed to download trailer for {tconst} from {url}")
+                    continue
+
+                print(f"✅✅✅Successfully downloaded trailer for {tconst} from {url} to {path}")
 
                 results.append({
                     'index': f'[{index + 1}/{len(self.movies)}]',
@@ -147,10 +189,13 @@ class DownloadMovieTrailers:
 
         new_target = self.END_INDEX + 100
 
-        self.initialize_process_movies.update_env_variable("START_INDEX", self.END_INDEX)
+        envManager.update_env_variable("START_INDEX", self.END_INDEX)
 
-        self.initialize_process_movies.update_env_variable("END_INDEX", new_target)
-        
-        self.initialize_process_movies.update_env_variable("TRAILER_CSV_PATH", new_csv)
-        
-        self.initialize_process_movies.update_env_variable("BATCH", new_batch)
+        envManager.update_env_variable("END_INDEX", new_target)
+
+        envManager.update_env_variable("TRAILER_CSV_PATH", new_csv)
+
+        envManager.update_env_variable("BATCH", new_batch)
+
+
+downloadTrailer = DownloadMovieTrailers()

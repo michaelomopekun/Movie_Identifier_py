@@ -1,9 +1,12 @@
 import time
 import os
 import requests
+import winsound
 import pandas as pd
 from pathlib import Path
 from dotenv import load_dotenv
+from env_manager import envManager
+from downLoad_Trailer import downloadTrailer
 
 # Load environment variables
 
@@ -21,6 +24,8 @@ class ProcessMovies:
 
 
         self.path = parent_dir / "logs" / "process_log.txt"
+
+        self.skipped_path = parent_dir / "logs" / "skipped_movies.txt"
 
         self.path.parent.mkdir(parents=True, exist_ok=True)
         if not self.path.exists():
@@ -61,6 +66,10 @@ class ProcessMovies:
     # Get movie details using IMDb ID
     def get_tmdb_movie_by_imdb_id(self, tconst):
 
+        message = f"========❌❌❌ No internet connection available at the moment while fetching for tconst {tconst},"
+        downloadTrailer.retry_on_no_internet_access(message)
+        print("✅✅✅Internet connection available, proceeding...")
+
         url = self.TMDB_SEARCH_URL.format(tconst=tconst)
 
         params = {
@@ -85,26 +94,44 @@ class ProcessMovies:
 
 
 
-    # Get YouTube trailer link
     def get_trailer_url(self, tmdb_id):
 
-        url = self.TMDB_VIDEO_URL.format(tmdb_id=tmdb_id)
+        message = f"========❌❌❌ No internet connection available while fetching TMDb ID {tmdb_id}"
+        downloadTrailer.retry_on_no_internet_access(message)
+        print("✅✅✅ Internet connection available, proceeding...")
 
+        url = self.TMDB_VIDEO_URL.format(tmdb_id=tmdb_id)
         params = {"api_key": self.API_KEY}
 
         try:
-
             response = requests.get(url, params=params)
-            response.raise_for_status()
-            
+
+            # to handle rate limiting
+            MAX_RETRY_WAIT = 60
+
+            if response.status_code == 429:
+                retry_after = int(response.headers.get("Retry-After", 30))
+
+                if retry_after > MAX_RETRY_WAIT:
+                    print(f"⛔ Retry-After too long ({retry_after}s). Skipping TMDb ID {tmdb_id}")
+                    winsound.PlaySound(f"Skipping TMDB ID {tmdb_id}, because Api Rate Limit has been hit and Retry-After is {retry_after}s which is too long", winsound.SND_ALIAS)
+
+                    #log in a file
+                    with open(self.skipped_path, "a") as log_file:
+                        log_file.write(f"{tmdb_id}, because Retry-After is {retry_after}s which is too long\n")
+                    return False
+
+                print(f"⏳ TMDb rate limit hit for ID {tmdb_id}. Retrying after {retry_after}s")
+                winsound.PlaySound(f"Api's Rate Limit has been hit. Retrying TMDB ID {tmdb_id} after {retry_after}s", winsound.SND_ALIAS)
+                time.sleep(retry_after)
+                return self.get_trailer_url(tmdb_id)
+
             for video in response.json().get("results", []):
                 if video["type"] == "Trailer" and video["site"] == "YouTube":
-
                     return f"https://www.youtube.com/watch?v={video['key']}"
-                
-        except Exception as e:
 
-            print(f"Error fetching trailer for TMDb ID {tmdb_id}: {e}")
+        except Exception as e:
+            print(f"❌ Error fetching trailer for TMDb ID {tmdb_id}: {e}")
 
         return None
 
@@ -149,9 +176,10 @@ class ProcessMovies:
 
                 print(f"[{index + 1}/{len(self.movies)}] {title} ({year}): Trailer not found")
 
-                with open(self.path, "a") as log_file:
-                    log_file.write(f"[{index + 1}/{len(self.movies)}] {tconst}, {title}, {year}, Trailer not found\n")
-                continue
+                if trailer_url != False:
+                    with open(self.path, "a") as log_file:
+                        log_file.write(f"[{index + 1}/{len(self.movies)}] {tconst}, {title}, {year}, Trailer not found\n")
+                    continue
 
             print(f"[{index + 1}/{len(self.movies)}] {title} ({year}): {trailer_url}")
 
@@ -180,8 +208,8 @@ class ProcessMovies:
         if number_of_trailers <= target_num_of_trailers:
             remain_to_100 = target_num_of_trailers - number_of_trailers
 
-            self.update_env_variable("START_INDEX", self.END_INDEX)
-            self.update_env_variable("END_INDEX", self.END_INDEX + remain_to_100)
+            envManager.update_env_variable("START_INDEX", self.END_INDEX)
+            envManager.update_env_variable("END_INDEX", self.END_INDEX + remain_to_100)
 
             self.__init__()
 
@@ -189,33 +217,6 @@ class ProcessMovies:
 
 
 
-
-
-
-    def update_env_variable(self, key, value, env_file_path = None):
-
-        if env_file_path is None:
-            env_file_path = self.path_env_file
-
-        lines = []
-
-        found = False
-
-        with open(env_file_path, "r") as file:
-            for line in file:
-                if line.startswith(f"{key}="):
-                    lines.append(f"{key}={value}\n")
-                    found = True
-
-                else:
-                    lines.append(line)
-
-        if not found:
-            lines.append(f"{key}={value}\n")
-
-        with open(env_file_path, "w") as file:
-            file.writelines(lines)
-
-        os.environ[key] = str(value)
+# processMovies = ProcessMovies()
 
 
